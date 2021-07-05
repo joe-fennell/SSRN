@@ -11,10 +11,11 @@ from keras.optimizers import Adam, SGD, Adadelta, RMSprop, Nadam
 import keras.callbacks as kcallbacks
 from keras.regularizers import l2
 import time
+import os
+from Utils import zeroPadding, normalization, doPCA, modelStatsRecord, averageAccuracy, ssrn_SS_UP
+
 import collections
 from sklearn import metrics, preprocessing
-
-from Utils import zeroPadding, normalization, doPCA, modelStatsRecord, averageAccuracy, ssrn_SS_IN
 
 
 def indexToAssignment(index_, Row, Col, pad_length):
@@ -62,7 +63,7 @@ def sampling(proptionVal, groundTruth):  # divide dataset into train and test da
 
 
 def res4_model_ss():
-    model_res4 = ssrn_SS_IN.ResnetBuilder.build_resnet_8((1, img_rows, img_cols, img_channels), nb_classes)
+    model_res4 = ssrn_SS_UP.ResnetBuilder.build_resnet_8((1, img_rows, img_cols, img_channels), nb_classes)
 
     RMS = RMSprop(lr=0.0003)
     # Let's train the model using RMSprop
@@ -70,40 +71,40 @@ def res4_model_ss():
 
     return model_res4
 
+cwd = os.getcwd()
 
-mat_data = sio.loadmat('/home/zilong/SSRN/datasets/IN/Indian_pines_corrected.mat')
-data_IN = mat_data['indian_pines_corrected']
-mat_gt = sio.loadmat('/home/zilong/SSRN/datasets/IN/Indian_pines_gt.mat')
-gt_IN = mat_gt['indian_pines_gt']
+# uPavia = sio.loadmat(os.path.join(cwd, './datasets/UP/PaviaU.mat'))
+# gt_uPavia = sio.loadmat(os.path.join(cwd, './datasets/UP/PaviaU_gt.mat'))
+
+uPavia = sio.loadmat('datasets/UP/PaviaU.mat')
+gt_uPavia = sio.loadmat('datasets/UP/PaviaU_gt.mat')
+data_IN = uPavia['paviaU']
+gt_IN = gt_uPavia['paviaU_gt']
 print (data_IN.shape)
 
 # new_gt_IN = set_zeros(gt_IN, [1,4,7,9,13,15,16])
 new_gt_IN = gt_IN
 
 batch_size = 16
-nb_classes = 16
+nb_classes = 9
 nb_epoch = 200  # 400
 img_rows, img_cols = 7, 7  # 27, 27
 patience = 200
 
-INPUT_DIMENSION_CONV = 200
-INPUT_DIMENSION = 200
+INPUT_DIMENSION_CONV = 103
+INPUT_DIMENSION = 103
 
-# 20%:10%:70% data for training, validation and testing
+# 10%:10%:80% data for training, validation and testing
 
-TOTAL_SIZE = 10249
-VAL_SIZE = 1025
-
-TRAIN_SIZE = 2055
+TOTAL_SIZE = 42776
+VAL_SIZE = 4281
+TRAIN_SIZE = 4281
 TEST_SIZE = TOTAL_SIZE - TRAIN_SIZE
-VALIDATION_SPLIT = 0.8
-# TRAIN_NUM = 10
-# TRAIN_SIZE = TRAIN_NUM * nb_classes
-# TEST_SIZE = TOTAL_SIZE - TRAIN_SIZE
-# VAL_SIZE = TRAIN_SIZE
 
+img_channels = 103
+VALIDATION_SPLIT = 0.90
 
-img_channels = 200
+img_channels = 103
 PATCH_LENGTH = 3  # Patch_size (13*2+1)*(13*2+1)
 
 data = data_IN.reshape(np.prod(data_IN.shape[:2]), np.prod(data_IN.shape[2:]))
@@ -119,7 +120,7 @@ whole_data = data_
 padded_data = zeroPadding.zeroPadding_3D(whole_data, PATCH_LENGTH)
 
 ITER = 1
-CATEGORY = 16
+CATEGORY = 9
 
 train_data = np.zeros((TRAIN_SIZE, 2 * PATCH_LENGTH + 1, 2 * PATCH_LENGTH + 1, INPUT_DIMENSION_CONV))
 test_data = np.zeros((TEST_SIZE, 2 * PATCH_LENGTH + 1, 2 * PATCH_LENGTH + 1, INPUT_DIMENSION_CONV))
@@ -138,8 +139,7 @@ seeds = [1334]
 for index_iter in xrange(ITER):
     print("# %d Iteration" % (index_iter + 1))
 
-    best_weights_RES_path_ss4 = '/home/zilong/SSRN/models/Indian_best_RES_3D_SS4_10_' + str(
-        index_iter + 1) + '.hdf5'
+    best_weights_RES_path_ss4 = 'models/UP_best_RES_3D_SS4_5_' + str(index_iter + 1) + '.hdf5'
 
     np.random.seed(seeds[index_iter])
     #    train_indices, test_indices = sampleFixNum.samplingFixedNum(TRAIN_NUM, gt)
@@ -203,5 +203,5 @@ for index_iter in xrange(ITER):
     print("# %d Iteration" % (index_iter + 1))
 
 modelStatsRecord.outputStats_assess(KAPPA_RES_SS4, OA_RES_SS4, AA_RES_SS4, ELEMENT_ACC_RES_SS4, CATEGORY,
-                             '/home/zilong/SSRN/records/IN_test_SS_10.txt',
-                             '/home/zilong/SSRN/records/IN_test_SS_element_10.txt')
+                             'records/UP_test_SS_10.txt',
+                             'records/UP_test_SS_element_10.txt')

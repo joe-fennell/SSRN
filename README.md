@@ -48,22 +48,23 @@ When you create a conda environment, check you have installed the packages in th
 
 ## Usage
 
+###UPDATE: run from inside main directory
 Train models with commonly studied hyperspectral imagery (HSI) datasets:
 ```bash
-$ python ./SSRN_IN.py
-$ python ./SSRN_UP.py
+$ python SSRN_IN.py
+$ python SSRN_UP.py
 
 ```
 Evaluate saved trained models:
 ```bash
-$python ./Load_Models/Load_IN.py
-$python ./Load_Models/Load_UP.py
+$python Load_IN.py
+$python Load_UP.py
 
 ```
 Illustrate final classification maps:
 ```bash
-$python ./Classification\ Maps/IN_classification_maps.py
-$python ./Classification\ Maps/UP_classification_maps.py
+$python IN_classification_maps.py
+$python UP_classification_maps.py
 
 ```
 
@@ -75,7 +76,7 @@ If you encountered problems like " no such file or direcotry", please check the 
 
 <img src="figure/fig3.png" height="200"/>
 
-Fig.4  The IN dataset classification result (Overall Accuracy 99.44%) of SSRN using 20% samples for training. (a) False color image. (b) Ground truth labels. (c) Classification map. 
+Fig.4  The IN dataset classification result (Overall Accuracy 99.44%) of SSRN using 20% samples for training. (a) False color image. (b) Ground truth labels. (c) Classification map.
 
 ### University of Pavia (UP) dataset
 

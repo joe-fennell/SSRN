@@ -7,7 +7,7 @@ from keras.optimizers import Adam, SGD, Adadelta, RMSprop, Nadam
 
 from sklearn import metrics, preprocessing
 
-from Utils import zeroPadding, normalization, doPCA, modelStatsRecord, averageAccuracy, ssrn_SS_UP
+from Utils import zeroPadding, normalization, doPCA, modelStatsRecord, averageAccuracy, ssrn_SS_IN
 
 def sampling(proptionVal, groundTruth):              #divide dataset into train and test datasets
     labels_loc = {}
@@ -66,7 +66,7 @@ def classification_map(map, groundTruth, dpi, savePath):
     return 0
 
 def res4_model_ss():
-    model_res4 = ssrn_SS_UP.ResnetBuilder.build_resnet_8((1, img_rows, img_cols, img_channels), nb_classes)
+    model_res4 = ssrn_SS_IN.ResnetBuilder.build_resnet_8((1, img_rows, img_cols, img_channels), nb_classes)
 
     RMS = RMSprop(lr=0.0003)
     # Let's train the model using RMSprop
@@ -74,36 +74,43 @@ def res4_model_ss():
 
     return model_res4
 
-
-uPavia = sio.loadmat('/home/zilong/SSRN/datasets/UP/PaviaU.mat')
-gt_uPavia = sio.loadmat('/home/zilong/SSRN/datasets/UP/PaviaU_gt.mat')
-data_IN = uPavia['paviaU']
-gt_IN = gt_uPavia['paviaU_gt']
+mat_data = sio.loadmat('datasets/IN/Indian_pines_corrected.mat')
+data_IN = mat_data['indian_pines_corrected']
+mat_gt = sio.loadmat('datasets/IN/Indian_pines_gt.mat')
+gt_IN = mat_gt['indian_pines_gt']
 print (data_IN.shape)
 
 new_gt_IN = gt_IN
 
 batch_size = 16
-nb_classes = 9
-nb_epoch = 200   #400
+nb_classes = 16
+nb_epoch = 200     #400
 img_rows, img_cols = 7, 7         #27, 27
 patience = 200
 
-INPUT_DIMENSION_CONV = 103
-INPUT_DIMENSION = 103
+INPUT_DIMENSION_CONV = 200
+INPUT_DIMENSION = 200
 
 # 10%:10%:80% data for training, validation and testing
 
-TOTAL_SIZE = 42776
-VAL_SIZE = 4281
-TRAIN_SIZE = 4281
+TOTAL_SIZE = 10249
+VAL_SIZE = 1025
+
+# 20%:10%:70% data for training, validation and testing
+
+TRAIN_SIZE = 2055
 TEST_SIZE = TOTAL_SIZE - TRAIN_SIZE
+VALIDATION_SPLIT = 0.8
+# TRAIN_NUM = 10
+# TRAIN_SIZE = TRAIN_NUM * nb_classes
+# TEST_SIZE = TOTAL_SIZE - TRAIN_SIZE
+# VAL_SIZE = TRAIN_SIZE
 
 ALL_SIZE = data_IN.shape[0] * data_IN.shape[1]
 
-img_channels = 103
-VALIDATION_SPLIT = 0.90
-PATCH_LENGTH = 3                 #Patch_size (13*2+1)*(13*2+1)
+img_channels = 200
+VALIDATION_SPLIT = 0.80
+PATCH_LENGTH = 3                #Patch_size (13*2+1)*(13*2+1)
 
 data = data_IN.reshape(np.prod(data_IN.shape[:2]),np.prod(data_IN.shape[2:]))
 gt = new_gt_IN.reshape(np.prod(new_gt_IN.shape[:2]),)
@@ -117,34 +124,24 @@ data_ = data.reshape(data_IN.shape[0], data_IN.shape[1],data_IN.shape[2])
 whole_data = data_
 padded_data = zeroPadding.zeroPadding_3D(whole_data, PATCH_LENGTH)
 
-# data_trans_AE = data.transpose()
-# data_pca1_AE = doPCA.dimension_PCA(data_trans_AE, data_, 1)
-# data_pca1_AE = data_pca1_AE.reshape(data_pca1_AE.shape[0], data_pca1_AE.shape[1])
-# padded_pca1_AE = zeroPadding.zeroPadding_2D(data_pca1_AE, PATCH_LENGTH)
-
 ITER = 1
-CATEGORY = 9
+CATEGORY = 16
 
 all_data = np.zeros((ALL_SIZE, 2*PATCH_LENGTH + 1, 2*PATCH_LENGTH + 1, INPUT_DIMENSION_CONV))
 train_data = np.zeros((TRAIN_SIZE, 2*PATCH_LENGTH + 1, 2*PATCH_LENGTH + 1, INPUT_DIMENSION_CONV))
 test_data = np.zeros((TEST_SIZE, 2*PATCH_LENGTH + 1, 2*PATCH_LENGTH + 1, INPUT_DIMENSION_CONV))
-
-x_all = all_data.reshape(all_data.shape[0], all_data.shape[1], all_data.shape[2],INPUT_DIMENSION_CONV)
-x_train = train_data.reshape(train_data.shape[0], train_data.shape[1], train_data.shape[2],INPUT_DIMENSION_CONV)
-x_test_all = test_data.reshape(test_data.shape[0], test_data.shape[1], test_data.shape[2], INPUT_DIMENSION_CONV)
-
-#seeds = [1220, 1221, 1222, 1223, 1224, 1225, 1226, 1227, 1228, 1229]
 
 seeds = [1334]
 
 for index_iter in xrange(ITER):
     print("# %d Iteration" % (index_iter + 1))
 
-    best_weights_RES_path_ss4 = '/home/zilong/SSRN/models/UP_best_RES_3D_SS4_5_' + str(index_iter + 1) + '.hdf5'
+    best_weights_RES_path_ss4 = 'models/Indian_best_RES_3D_SS4_10_' + str(
+        index_iter + 1) + '.hdf5'
 
     np.random.seed(seeds[0])
 
-    #    train_indices, test_indices = sampleFixNum.samplingFixedNum(TRAIN_NUM, gt)
+#    train_indices, test_indices = sampleFixNum.samplingFixedNum(TRAIN_NUM, gt)
     train_indices, test_indices = sampling(VALIDATION_SPLIT, gt)
 
     y_train_raw = gt[train_indices] - 1
@@ -175,14 +172,14 @@ for index_iter in xrange(ITER):
     # x_all = all_data.reshape(all_data.shape[0], all_data.shape[1], all_data.shape[2], INPUT_DIMENSION_CONV)
     # x_train = train_data.reshape(train_data.shape[0], train_data.shape[1], train_data.shape[2], INPUT_DIMENSION_CONV)
     # x_test_all = test_data.reshape(test_data.shape[0], test_data.shape[1], test_data.shape[2], INPUT_DIMENSION_CONV)
-    #
+
     # x_val = x_test_all[-VAL_SIZE:]
     # y_val = y_test[-VAL_SIZE:]
     #
     # x_test = x_test_all[:-VAL_SIZE]
     # y_test = y_test[:-VAL_SIZE]
 
-# load trained model
+    # load trained model
     model_res4_ss = res4_model_ss()
 
     model_res4_ss.load_weights(best_weights_RES_path_ss4)
@@ -212,10 +209,23 @@ for index_iter in xrange(ITER):
             y[index] = np.array([128, 128, 128]) / 255.
         if item == 8:
             y[index] = np.array([128, 0, 0]) / 255.
+        if item == 9:
+            y[index] = np.array([128, 128, 0]) / 255.
+        if item == 10:
+            y[index] = np.array([0, 128, 0]) / 255.
+        if item == 11:
+            y[index] = np.array([128, 0, 128]) / 255.
+        if item == 12:
+            y[index] = np.array([0, 128, 128]) / 255.
+        if item == 13:
+            y[index] = np.array([0, 0, 128]) / 255.
+        if item == 14:
+            y[index] = np.array([255, 165, 0]) / 255.
+        if item == 15:
+            y[index] = np.array([255, 215, 0]) / 255.
 
     # print y
 
     y_re = np.reshape(y, (gt_IN.shape[0], gt_IN.shape[1], 3))
 
-    classification_map(y_re, gt_IN, 24, "/home/zilong/SSRN/Cmaps/RES4_SS_UP.png")
-
+    classification_map(y_re, gt_IN, 24, "RES4_SS_IN.png")
